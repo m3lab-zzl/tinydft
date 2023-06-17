@@ -1,6 +1,8 @@
 Tiny DFT
 ########
 
+在学习完最简单的实空间网格基底后，该熟悉一下原子轨道相关的东西了，而且还有一堆作业可以强化代码能力
+
 Tiny DFT is a minimalistic atomic Density Functional Theory (DFT) code, mainly
 for educational purposes. It only supports spherically symmetric atoms and local
 exchange-correlation functionals (at the moment only Dirac exchange).
