@@ -76,7 +76,9 @@ def scf_atom(atnum: float, occups: List[np.ndarray], grid: TransformedGrid,
     # Fock operators from previous iteration, used for mixing.
     focks_old = []
     # Volume element in spherical coordinates
-    vol = 4 * np.pi * grid.points**2
+    vol = 4 * np.pi * grid.points**2 # grid.points 是增量，不是坐标
+    # ! 和实空间方法不同的地方在于，直接对体积元积分，而不是对每个格点积分
+    # 一般径向的格点数目比较少，所以这样做更高效
 
     nelec = np.concatenate(occups).sum()
     maxangqn = len(occups) - 1
@@ -127,7 +129,7 @@ def scf_atom(atnum: float, occups: List[np.ndarray], grid: TransformedGrid,
                 fock_mix = mixing * fock + (1 - mixing) * focks_old[angqn]
                 focks_old[angqn] = fock_mix
             # Solve for the occupied orbitals.
-            evals, evecs = eigh(fock_mix, basis.olp, eigvals=(0, len(occups[angqn]) - 1))
+            evals, evecs = eigh(fock_mix, basis.olp, eigvals=(0, len(occups[angqn]) - 1)) # evals: 1, evecs: 80 x 1
             eps_orbs_u.append((evals, evecs))
             # Compute the kinetic energy contributions using the orbitals.
             energy_kin_rad += np.einsum(
@@ -139,6 +141,8 @@ def scf_atom(atnum: float, occups: List[np.ndarray], grid: TransformedGrid,
                     'i,ji,jk,ki',
                     occups[angqn], evecs, basis.kin_ang, evecs) * angmom_factor
 
+
+        # ! LCAO模式与RS的区别在于“组装”波函数的系数的求解方法不同，但是求出所谓的波函数本征态之后，都还是要将电荷密度以及势函数投影回实空间网格
         # B) Build the density and derived quantities.
         # Compute the total density.
         rho = build_rho(occups, eps_orbs_u, grid, basis)
@@ -191,7 +195,7 @@ def build_rho(
     for angqn, (_evals, evecs) in enumerate(eps_orbs_u):
         if angqn >= len(occups):
             break
-        orbs_grid_u = np.dot(evecs.T, basis.fnvals)
+        orbs_grid_u = np.dot(evecs.T, basis.fnvals) # 1x80 x 80x256 -> 1x256
         orbs_grid_r = orbs_grid_u / grid.points / np.sqrt(4 * np.pi)
         angqn_occups = occups[angqn]
         rho += np.dot(angqn_occups, orbs_grid_r[:len(angqn_occups)]**2)

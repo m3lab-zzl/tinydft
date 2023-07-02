@@ -133,11 +133,12 @@ class TransformedGrid(BaseGrid):
             The number of grid points.
 
         """
-        self.legendre_grid = LegendreGrid(npoint)
-        points = transform(self.legendre_grid.points, np)
+        # 给定网格点数，返回具体的网格点和权重
+        self.legendre_grid = LegendreGrid(npoint) # npoint x npoint
+        points = transform(self.legendre_grid.points, np) # npoint x 1
         # Compute the Jacobian of the grid transformation and update weights.
         # pylint: disable=no-value-for-parameter
-        self.derivs = abs(elementwise_grad(transform)(self.legendre_grid.points, agnp))
+        self.derivs = abs(elementwise_grad(transform)(self.legendre_grid.points, agnp)) # npoint x 1
         weights = self.legendre_grid.weights * self.derivs
         BaseGrid.__init__(self, points, weights)
 

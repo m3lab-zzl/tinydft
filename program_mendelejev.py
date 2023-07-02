@@ -35,7 +35,7 @@ __all__ = ['main', 'char2angqn', 'interpret_econf', 'klechkowski']
 def main():
     """Compute atomic DFT results for a series of elements."""
     for atnum in range(1, 19):
-        plot_atom(atnum, 0)
+        plot_atom(atnum, 0) # 默认电中性
 
 
 def plot_atom(atnum: float, atcharge: float):
@@ -44,19 +44,22 @@ def plot_atom(atnum: float, atcharge: float):
     Parameters
     ----------
     atnum
-        Atomic number.
+        原子序数
     atcharge
-        The net charge.
+        净电荷数
 
     """
-    nelec = atnum - atcharge
-    econf = klechkowski(nelec)
-    occups = interpret_econf(econf)
+    nelec = atnum - atcharge # 原子的电子总数
+    econf = klechkowski(nelec) # 换算成类似 1s2p1 这样的电子排布
     print("Nuclear charge                    {:8.1f}".format(atnum))
     print("Electronic configuration          {:s}".format(str(econf)))
+    occups = interpret_econf(econf) # 1s2 2s2 2p1 -> [2, 2, 1]
 
-    grid = setup_grid()
-    basis = Basis(grid)
+    grid = setup_grid() # 非线性网格，半径方向不是均匀采样 npoint x 1
+    basis = Basis(grid) # 基底，仔细观察这个是怎么构造的，默认采用80个基底
+    # LCAO方法，将空间切分成一个个球壳，而不是小方块，每个球壳的值用基底线性组合表示
+    # 对于3D空间， 10 x 10 x 10 一般远大于 10 x nbasis，所以说实空间基底更耗资源
+
     # Compute the overlap matrix, just to check the numerics of the basis.
     evals_olp = np.linalg.eigvalsh(basis.olp)
     print("Number of radial grid points      {:8d}".format(len(grid.points)))
@@ -162,12 +165,12 @@ def interpret_econf(econf: str) -> List[np.ndarray]:
     """
     occups: List[List[float]] = []
     for key in econf.split():
-        occup = float(key[2:])
+        occup = float(key[2:]) # 轨道电子数
         if occup <= 0:
             raise ValueError("Occuptions in the electronic configuration must "
                              "be strictly positive.")
-        priqn = int(key[0])
-        angqn = char2angqn(key[1])
+        priqn = int(key[0]) # 主量子数
+        angqn = char2angqn(key[1]) # 从s,p这样的轨道符号换算回角量子数
         if occup > 2 * (2 * angqn + 1):
             raise ValueError("Occuptions in the electronic configuration must "
                              "not exceed 2 * (2 * angqn + 1).")
@@ -184,14 +187,14 @@ def interpret_econf(econf: str) -> List[np.ndarray]:
 
 def klechkowski(nelec: float) -> str:
     """Return the atomic electron configuration by following the Klechkowski rule."""
-    priqn_plus_angqn = 1
+    priqn_plus_angqn = 1 # 主量子数 1s1 的前一个1
     words = []
     while nelec > 0:
         # start with highest possible angqn for given priqn+angqn
-        angqn = (priqn_plus_angqn - 1) // 2
+        angqn = (priqn_plus_angqn - 1) // 2 # 角量子数
         priqn = priqn_plus_angqn - angqn
         while nelec > 0 and angqn >= 0:
-            nelec_orb = min(nelec, 2 * (2 * angqn + 1))
+            nelec_orb = min(nelec, 2 * (2 * angqn + 1)) # 轨道上的电子数
             nelec -= nelec_orb
             words.append("{}{}{}".format(priqn, ANGMOM_CHARACTERS[angqn], nelec_orb))
             angqn -= 1

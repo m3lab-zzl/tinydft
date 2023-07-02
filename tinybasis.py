@@ -79,13 +79,13 @@ class Basis:
         Parameters
         ----------
         grid
-            The radial integration grid.
+            The radial integration grid. 径向积分网格， npoint x 1
         alphamin
             The lowest Gaussian exponent.
         alphamax
             The highest Gaussian exponent.
         nbasis
-            The number of basis functions.
+            The number of basis functions. 基函数的数量
 
         """
         self.grid = grid
