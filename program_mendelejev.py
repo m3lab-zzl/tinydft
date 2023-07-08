@@ -57,9 +57,10 @@ def plot_atom(atnum: float, atcharge: float):
 
     grid = setup_grid() # 非线性网格，半径方向不是均匀采样 npoint x 1
     basis = Basis(grid) # 基底，仔细观察这个是怎么构造的，默认采用80个基底
+    # ! 构造基底的函数的样式可变，只是初始值，最后都会变成正交归一的基底
     # LCAO方法，将空间切分成一个个球壳，而不是小方块，每个球壳的值用基底线性组合表示
     # 对于3D空间， 10 x 10 x 10 一般远大于 10 x nbasis，所以说实空间基底更耗资源
-
+    # ! 单个原子自己的多个轨道之间正交，但是不同原子的不会，要计算重叠矩阵
     # Compute the overlap matrix, just to check the numerics of the basis.
     evals_olp = np.linalg.eigvalsh(basis.olp)
     print("Number of radial grid points      {:8d}".format(len(grid.points)))
